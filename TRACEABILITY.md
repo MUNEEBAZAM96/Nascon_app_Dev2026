@@ -11,8 +11,8 @@ Maps every requirement ID to the source files that own it and the automated test
 | FR-2.1 | Club profiles and tenant isolation | `backend/src/db/schema.sql`, `backend/src/db/seed.ts`, `mobile/src/theme/tenant.ts` | stub |
 | FR-2.2 | Roster and player registry | `backend/src/domain/roster/index.ts`, `backend/src/audit/roster.ts` | `tests/roster/*.test.ts` |
 | FR-2.3 | Integrated club merchandise store | `backend/src/domain/store/index.ts`, `backend/src/audit/checkout.ts`, `backend/src/audit/inventory.ts`, `backend/src/queue/orders.ts`, `backend/src/worker.ts`, `backend/src/storage/minio.ts` | `tests/store/*.test.ts` |
-| FR-5.1 | Five-tier RBAC | `backend/src/domain/rbac/index.ts`, `backend/src/domain/rbac/tokens.ts`, `backend/src/audit/rbac.ts`, `backend/src/api/auth.ts` | stub |
+| FR-5.1 | Five-tier RBAC | `backend/src/domain/rbac/index.ts`, `backend/src/domain/rbac/tokens.ts`, `backend/src/audit/rbac.ts`, `backend/src/api/auth.ts` | `tests/rbac/*.test.ts` |
 | NFR-3 | Concurrency-safe checkout | `backend/src/domain/store/index.ts`, `backend/src/db/schema.sql` (`variants`) | `tests/store/*.test.ts` |
 | NFR-4 | Offline tolerance | `backend/src/domain/sync/index.ts`, `backend/src/audit/offlineSync.ts`, `mobile/src/db/index.ts`, `mobile/src/queue/*.ts`, `mobile/src/sync/status.tsx`, `mobile/src/components/SyncBanner.tsx` | stub |
-| NFR-5 | Security (JWT, rate limiting, validation, body limit) | `backend/src/domain/rbac/tokens.ts`, `backend/src/api/ping.ts`, `backend/src/http/validate.ts`, `backend/src/http/errors.ts`, `backend/src/app.ts`, `mobile/src/auth/token.ts` | stub |
+| NFR-5 | Security (JWT, rate limiting, validation, body limit) | `backend/src/domain/rbac/tokens.ts`, `backend/src/api/ping.ts`, `backend/src/http/validate.ts`, `backend/src/http/errors.ts`, `backend/src/app.ts`, `mobile/src/auth/token.ts` | `tests/rbac/*.test.ts` |
 | NFR-7 | Reproducible one-command Docker stack | `docker-compose.yml`, `backend/Dockerfile`, `backend/src/index.ts`, `backend/src/db/pool.ts`, `backend/src/db/seed.ts` | stub |
