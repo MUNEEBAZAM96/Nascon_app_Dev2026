@@ -1,11 +1,21 @@
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { api } from '../../src/api/client';
 import { useSession } from '../../src/auth/session';
 import { Button } from '../../src/components/Button';
 import { colors, minTapTarget, spacing } from '../../src/theme/tenant';
+
+const BRAND = '#0B6E4F';
+const DEMO_PASSWORD = 'Nascon@26';
+const ACCOUNTS = [
+  { label: 'Admin', email: 'admin@nascon.test' },
+  { label: 'Organizer', email: 'organizer@nascon.test' },
+  { label: 'Manager', email: 'manager@nascon.test' },
+  { label: 'Player', email: 'player@nascon.test' },
+  { label: 'Viewer', email: 'viewer@nascon.test' },
+];
 
 export default function LoginScreen() {
   const { signIn } = useSession();
@@ -34,11 +44,33 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={styles.band}>
+        <Text style={styles.title} accessibilityRole="header">Sideline</Text>
+        <Text style={styles.bandSub}>Alpha Sports</Text>
+      </View>
       <View style={styles.card}>
-        <Text style={styles.title} accessibilityRole="header">
-          Sideline
-        </Text>
-        <Text style={styles.subtitle}>Sign in to follow your league.</Text>
+        <Text style={styles.label}>Demo account</Text>
+        <View style={styles.chips}>
+          {ACCOUNTS.map((account) => {
+            const selected = email === account.email;
+            return (
+              <Pressable
+                key={account.email}
+                accessibilityRole="button"
+                accessibilityLabel={account.label}
+                accessibilityState={{ selected }}
+                onPress={() => {
+                  setEmail(account.email);
+                  setPassword(DEMO_PASSWORD);
+                  setError(null);
+                }}
+                style={[styles.chip, selected && styles.chipOn]}
+              >
+                <Text style={[styles.chipText, selected && styles.chipTextOn]}>{account.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
 
         <Text style={styles.label}>Email</Text>
         <TextInput
@@ -65,12 +97,10 @@ export default function LoginScreen() {
         />
 
         {error ? (
-          <Text style={styles.error} accessibilityLiveRegion="polite">
-            {error}
-          </Text>
+          <Text style={styles.error} accessibilityLiveRegion="polite">{error}</Text>
         ) : null}
 
-        <Button label="Sign in" onPress={onSubmit} loading={loading} />
+        <Button label="Sign in" onPress={onSubmit} loading={loading} color={BRAND} />
         <Link href="/settings" style={styles.link} accessibilityRole="link">
           Server settings
         </Link>
@@ -80,10 +110,25 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, justifyContent: 'center', padding: spacing.md, backgroundColor: colors.surface },
-  card: { gap: spacing.sm, maxWidth: 480, width: '100%', alignSelf: 'center' },
-  title: { fontSize: 32, fontWeight: '800', color: colors.text },
-  subtitle: { fontSize: 16, color: colors.muted, marginBottom: spacing.md },
+  root: { flex: 1, backgroundColor: colors.background },
+  band: { height: 160, backgroundColor: BRAND, justifyContent: 'flex-end', padding: spacing.lg, gap: spacing.xs },
+  title: { fontSize: 32, fontWeight: '800', color: '#FFFFFF' },
+  bandSub: { fontSize: 16, color: '#E8F5E9' },
+  card: { gap: spacing.sm, padding: spacing.md, maxWidth: 480, width: '100%', alignSelf: 'center' },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm },
+  chip: {
+    minHeight: minTapTarget,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: BRAND,
+    paddingHorizontal: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  chipOn: { backgroundColor: BRAND },
+  chipText: { color: BRAND, fontWeight: '700', fontSize: 15 },
+  chipTextOn: { color: '#FFFFFF' },
   label: { fontSize: 15, fontWeight: '600', color: colors.text },
   input: {
     minHeight: minTapTarget,
@@ -92,9 +137,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: spacing.md,
     fontSize: 16,
-    backgroundColor: colors.background,
+    backgroundColor: '#FFFFFF',
     color: colors.text,
   },
   error: { color: colors.danger, fontSize: 15 },
-  link: { fontSize: 16, color: colors.text, textDecorationLine: 'underline', paddingVertical: spacing.md, textAlign: 'center' },
+  link: { fontSize: 15, color: colors.muted, textDecorationLine: 'underline', paddingVertical: spacing.md, textAlign: 'center' },
 });

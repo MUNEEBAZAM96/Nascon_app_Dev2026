@@ -17,7 +17,7 @@ export function SyncBanner() {
 
   return (
     <View
-      style={[styles.banner, { paddingTop: insets.top + spacing.xs, backgroundColor: label.color }]}
+      style={[styles.banner, { paddingTop: insets.top, backgroundColor: label.color }]}
       accessibilityRole="summary"
       accessibilityLabel={`Connection status: ${label.text}`}
     >

@@ -80,7 +80,8 @@ export interface ScoreEvent {
   sequence: number;
   event_id: string;
   type: string;
-  payload: { team_id?: string; event_type?: string };
+  payload: { team_id?: string; event_type?: string; compensates?: string };
+  compensated?: boolean;
 }
 
 export interface ScoreView {

@@ -1,15 +1,19 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { ApiError, api, type ScoreView } from '../../src/api/client';
+import { useSession } from '../../src/auth/session';
 import { Button } from '../../src/components/Button';
-import { Screen, Section } from '../../src/components/Screen';
-import { colors } from '../../src/theme/tenant';
+import { Card, LoadingBars, Screen, StatusPill } from '../../src/components/Screen';
+import { displayName, outcomeLabel } from '../../src/theme/names';
+import { colors, spacing, tenantTheme } from '../../src/theme/tenant';
 
 const MATCH_ID = 'demo-match-2';
 
 export default function ScoreScreen() {
+  const { claims } = useSession();
+  const theme = tenantTheme(claims?.tenant_id);
   const [score, setScore] = useState<ScoreView | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -46,23 +50,28 @@ export default function ScoreScreen() {
 
   return (
     <Screen title="Scoring">
-      {loading ? <Text style={styles.muted}>Loading match…</Text> : null}
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {loading ? <Card><LoadingBars label="Loading match" /></Card> : null}
       {score ? (
-        <Section title="demo-match-2">
-          <Text style={styles.score}>
-            {score.home.team_id} {score.home.score} – {score.away.score} {score.away.team_id}
-          </Text>
-          <Text style={styles.muted}>{score.status}</Text>
+        <Card tone={theme.secondary}>
+          <View style={styles.hero}>
+            <Text style={styles.team}>{displayName(score.home.team_id)}</Text>
+            <Text style={styles.big}>{score.home.score} – {score.away.score}</Text>
+            <Text style={styles.team}>{displayName(score.away.team_id)}</Text>
+            <StatusPill status={score.status} />
+            <Text style={styles.muted}>{outcomeLabel(score.outcome)}</Text>
+          </View>
+          {error ? <Text style={styles.error}>{error}</Text> : null}
           {score.status === 'upcoming' ? (
             <Button
               label="Start match"
+              color={theme.primary}
               loading={busy}
               onPress={() => void send({ event_id: 'demo-match-2-start', type: 'match_start', payload: {} })}
             />
           ) : null}
           <Button
-            label="Goal for demo-t3"
+            label="Add goal for City"
+            color={theme.primary}
             loading={busy}
             onPress={() => void send({
               event_id: `demo-match-2-g-${Date.now()}`,
@@ -70,14 +79,35 @@ export default function ScoreScreen() {
               payload: { team_id: 'demo-t3', event_type: 'goal' },
             })}
           />
-        </Section>
+          <Button
+            label="Undo last goal"
+            variant="secondary"
+            color={theme.primary}
+            loading={busy}
+            onPress={() => {
+              const last = [...score.events].reverse().find((event) => event.type === 'score' && !event.compensated);
+              if (!last) {
+                setError('Add a goal before you undo one.');
+                return;
+              }
+              void send({
+                event_id: `demo-match-2-c-${Date.now()}`,
+                type: 'compensation',
+                payload: { compensates: last.event_id, reason: 'Disallowed' },
+              });
+            }}
+          />
+        </Card>
       ) : null}
+      {!score && error ? <Text style={styles.error}>{error}</Text> : null}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  score: { fontSize: 22, fontWeight: '800', color: colors.text },
-  muted: { fontSize: 16, color: colors.muted },
+  hero: { alignItems: 'center', gap: spacing.sm },
+  team: { fontSize: 18, fontWeight: '700', color: colors.text },
+  big: { fontSize: 56, fontWeight: '800', color: colors.text },
+  muted: { fontSize: 15, color: colors.muted },
   error: { fontSize: 15, color: colors.danger },
 });

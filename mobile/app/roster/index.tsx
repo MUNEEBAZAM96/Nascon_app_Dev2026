@@ -3,9 +3,11 @@ import { useCallback, useState } from 'react';
 import { Alert, StyleSheet, Text } from 'react-native';
 
 import { ApiError, DEMO, api, type PlayerHistory } from '../../src/api/client';
+import { useSession } from '../../src/auth/session';
 import { Button } from '../../src/components/Button';
-import { Screen, Section } from '../../src/components/Screen';
-import { colors } from '../../src/theme/tenant';
+import { Card, LoadingBars, Screen } from '../../src/components/Screen';
+import { displayName, roleLabel } from '../../src/theme/names';
+import { colors, tenantTheme } from '../../src/theme/tenant';
 
 const SETUP = {
   league: {
@@ -29,6 +31,8 @@ const SETUP = {
 };
 
 export default function RosterScreen() {
+  const { claims } = useSession();
+  const theme = tenantTheme(claims?.tenant_id);
   const [player, setPlayer] = useState<PlayerHistory | null>(null);
   const [loading, setLoading] = useState(true);
   const [moving, setMoving] = useState(false);
@@ -84,16 +88,28 @@ export default function RosterScreen() {
 
   return (
     <Screen title="Roster">
-      {loading ? <Text style={styles.muted}>Loading roster…</Text> : null}
+      {loading ? <Card><LoadingBars label="Loading roster" /></Card> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {player ? (
-        <Section title={player.player_id}>
-          <Text style={styles.line}>Squad {player.current_squad_id ?? 'none'}</Text>
-          <Text style={styles.line}>Role {player.role ?? 'none'}</Text>
+        <>
+          {SETUP.squads.map((squad) => (
+            <Card key={squad.squad_id}>
+              <Text style={styles.title}>{squad.name}</Text>
+              {SETUP.players
+                .filter((member) => (member.player_id === DEMO.rosterPlayer ? player.current_squad_id : member.squad_id) === squad.squad_id)
+                .map((member) => (
+                  <Text key={member.player_id} style={styles.line}>
+                    {member.name} · {roleLabel(member.player_id === DEMO.rosterPlayer ? player.role : member.role)}
+                  </Text>
+                ))}
+            </Card>
+          ))}
           {player.current_squad_id && player.current_squad_id !== 'sq-demo-b' ? (
-            <Button label="Move to Demo Rovers" onPress={confirmMove} loading={moving} />
-          ) : null}
-        </Section>
+            <Button label="Move Demo Striker to Demo Rovers" color={theme.primary} onPress={confirmMove} loading={moving} />
+          ) : (
+            <Text style={styles.line}>Demo Striker is already at Demo Rovers.</Text>
+          )}
+        </>
       ) : null}
     </Screen>
   );
@@ -110,7 +126,7 @@ async function readOrCreate(): Promise<PlayerHistory> {
 }
 
 const styles = StyleSheet.create({
-  muted: { fontSize: 16, color: colors.muted },
-  error: { fontSize: 15, color: colors.danger },
+  title: { fontSize: 20, fontWeight: '800', color: colors.text },
   line: { fontSize: 16, color: colors.text },
+  error: { fontSize: 15, color: colors.danger },
 });

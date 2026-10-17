@@ -18,9 +18,10 @@ export function tenantTheme(tenantId: string | null | undefined): TenantTheme {
 export const colors = {
   text: '#111827',
   muted: '#4B5563',
-  background: '#FFFFFF',
+  background: '#F3F6F4',
+  card: '#FFFFFF',
   surface: '#F9FAFB',
-  border: '#D1D5DB',
+  border: '#E5E7EB',
   danger: '#B91C1C',
   online: '#047857',
   offline: '#B91C1C',

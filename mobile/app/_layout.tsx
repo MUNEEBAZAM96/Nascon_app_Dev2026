@@ -39,7 +39,14 @@ function RootNavigator() {
   }
 
   return (
-    <Stack screenOptions={{ headerBackTitle: 'Back' }}>
+    <Stack
+      screenOptions={{
+        headerBackTitle: 'Back',
+        headerStyle: { backgroundColor: '#0B6E4F' },
+        headerTintColor: '#FFFFFF',
+        headerTitleStyle: { color: '#FFFFFF', fontWeight: '700' },
+      }}
+    >
       <Stack.Protected guard={!!token}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="match/[id]" options={{ title: 'Match' }} />
