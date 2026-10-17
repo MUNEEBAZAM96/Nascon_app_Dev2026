@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.local
+mobile/.expo/
+mobile/android/
+mobile/ios/
+*.apk
+!mobile/release/app-release.apk
+._*
+.DS_Store

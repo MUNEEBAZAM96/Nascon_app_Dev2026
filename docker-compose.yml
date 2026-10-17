@@ -1,0 +1,78 @@
+x-backend-env: &backend-env
+  DAY1_SALT: ${DAY1_SALT}
+  JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret}
+  DATABASE_URL: postgres://sideline:sideline@postgres:5432/sideline
+  REDIS_URL: redis://redis:6379
+  MINIO_ENDPOINT: minio
+  MINIO_PORT: "9000"
+  MINIO_ACCESS_KEY: sideline
+  MINIO_SECRET_KEY: sideline-secret
+  MINIO_BUCKET: receipts
+  PORT: "8080"
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: sideline
+      POSTGRES_USER: sideline
+      POSTGRES_PASSWORD: sideline
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sideline -d sideline"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: sideline
+      MINIO_ROOT_PASSWORD: sideline-secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+
+  api:
+    build: ./backend
+    command: ["node", "dist/index.js"]
+    environment: *backend-env
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    restart: unless-stopped
+
+  worker:
+    build: ./backend
+    command: ["node", "dist/worker.js"]
+    environment: *backend-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  miniodata:
