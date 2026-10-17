@@ -64,6 +64,99 @@ export interface LoginResponse {
   };
 }
 
+export function formatPkr(minor: number): string {
+  return `PKR ${(minor / 100).toFixed(2)}`;
+}
+
+export const JERSEY_PRICE_MINOR = 450000;
+export const JERSEY_PRICE = formatPkr(JERSEY_PRICE_MINOR);
+
+export interface ScoreSide {
+  team_id: string;
+  score: number;
+}
+
+export interface ScoreEvent {
+  sequence: number;
+  event_id: string;
+  type: string;
+  payload: { team_id?: string; event_type?: string };
+}
+
+export interface ScoreView {
+  status: 'upcoming' | 'in_progress' | 'completed' | string;
+  outcome: string;
+  home: ScoreSide;
+  away: ScoreSide;
+  events: ScoreEvent[];
+}
+
+export interface StandingRow {
+  rank: number;
+  team_id: string;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  scored: number;
+  conceded: number;
+  diff: number;
+  points: number;
+  status: 'clinched' | 'still_possible' | 'eliminated';
+}
+
+export interface StandingsView {
+  league_id: string;
+  qualification_spots: number;
+  table: StandingRow[];
+}
+
+export interface InventoryView {
+  variant_id: string;
+  stock: number;
+  reserved: number;
+}
+
+export interface CheckoutView {
+  order_id: string;
+  status: string;
+  total_minor: number;
+}
+
+export interface PlayerHistory {
+  player_id: string;
+  current_squad_id: string | null;
+  role: string | null;
+}
+
+export interface EventBody {
+  event_id: string;
+  match_id: string;
+  type: string;
+  payload: Record<string, unknown>;
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  clinched: 'Clinched',
+  still_possible: 'Still possible',
+  eliminated: 'Eliminated',
+};
+
+export function statusLabel(status: string): string {
+  return STATUS_LABEL[status] ?? status;
+}
+
+export const DEMO = {
+  leagueId: 'demo-league-1',
+  matches: [
+    { id: 'demo-match-1', home: 'demo-t1', away: 'demo-t2' },
+    { id: 'demo-match-2', home: 'demo-t3', away: 'demo-t4' },
+  ],
+  variants: { M: 'var-jersey-001-M', L: 'var-jersey-001-L' },
+  rosterPlayer: 'p-demo-1',
+  asOf: '2026-10-17',
+} as const;
+
 export const api = {
   login(email: string, password: string) {
     return request<LoginResponse>('/api/v1/auth/login', {
@@ -71,4 +164,44 @@ export const api = {
       body: JSON.stringify({ email, password }),
     });
   },
+  standings(leagueId: string) {
+    return request<StandingsView>(`/audit/v1/standings/${leagueId}`);
+  },
+  score(matchId: string) {
+    return request<ScoreView>(`/audit/v1/score/${matchId}`);
+  },
+  postEvent(body: EventBody) {
+    return request<unknown>('/audit/v1/events', { method: 'POST', body: JSON.stringify(body) });
+  },
+  inventory(variantId: string) {
+    return request<InventoryView>(`/audit/v1/inventory/${variantId}`);
+  },
+  checkout(body: Record<string, unknown>) {
+    return request<CheckoutView>('/audit/v1/checkout', { method: 'POST', body: JSON.stringify(body) });
+  },
+  setupRoster(body: Record<string, unknown>) {
+    return request<{ league_id: string; status: string; squad_counts: Record<string, number> }>('/audit/v1/roster/setup', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  },
+  transfer(body: Record<string, unknown>) {
+    return request<unknown>('/audit/v1/roster/transfer', { method: 'POST', body: JSON.stringify(body) });
+  },
+  playerHistory(playerId: string, asOf: string) {
+    return request<PlayerHistory>(`/audit/v1/roster/history/${playerId}?as_of=${asOf}`);
+  },
 };
+
+/** Posts the four demo events once, when the seeded match has not started. A 200 means that event is already stored. */
+export async function ensureDemoMatchPlayed(): Promise<void> {
+  const view = await api.score('demo-match-1');
+  if (view.status === 'completed' || view.status !== 'upcoming' || view.events.length > 0) return;
+  const posts: EventBody[] = [
+    { event_id: 'demo-match-1-start', match_id: 'demo-match-1', type: 'match_start', payload: {} },
+    { event_id: 'demo-match-1-g1', match_id: 'demo-match-1', type: 'score', payload: { team_id: 'demo-t1', event_type: 'goal' } },
+    { event_id: 'demo-match-1-g2', match_id: 'demo-match-1', type: 'score', payload: { team_id: 'demo-t1', event_type: 'goal' } },
+    { event_id: 'demo-match-1-end', match_id: 'demo-match-1', type: 'match_end', payload: {} },
+  ];
+  for (const body of posts) await api.postEvent(body);
+}
