@@ -1,0 +1,42 @@
+export interface Config {
+  port: number;
+  day1Salt: string;
+  jwtSecret: string;
+  databaseUrl: string;
+  redisUrl: string;
+  minio: {
+    endPoint: string;
+    port: number;
+    accessKey: string;
+    secretKey: string;
+    bucket: string;
+  };
+}
+
+let cached: Config | null = null;
+
+export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
+  if (cached) return cached;
+
+  // The salt is the raw UTF-8 HMAC key: never trimmed, never hex-decoded.
+  const day1Salt = env.DAY1_SALT;
+  if (day1Salt === undefined || day1Salt === '') {
+    throw new Error('DAY1_SALT is missing or empty. Start with: DAY1_SALT=<salt> docker compose up -d --build');
+  }
+
+  cached = {
+    port: Number(env.PORT ?? 8080),
+    day1Salt,
+    jwtSecret: env.JWT_SECRET || 'dev-jwt-secret',
+    databaseUrl: env.DATABASE_URL ?? 'postgres://sideline:sideline@localhost:5432/sideline',
+    redisUrl: env.REDIS_URL ?? 'redis://localhost:6379',
+    minio: {
+      endPoint: env.MINIO_ENDPOINT ?? 'localhost',
+      port: Number(env.MINIO_PORT ?? 9000),
+      accessKey: env.MINIO_ACCESS_KEY ?? 'sideline',
+      secretKey: env.MINIO_SECRET_KEY ?? 'sideline-secret',
+      bucket: env.MINIO_BUCKET ?? 'receipts',
+    },
+  };
+  return cached;
+}

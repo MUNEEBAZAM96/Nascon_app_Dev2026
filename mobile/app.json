@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Sideline",
+    "slug": "sideline",
+    "scheme": "sideline",
+    "version": "0.1.0",
+    "orientation": "default",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "bundleIdentifier": "com.sideline.app",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.sideline.app",
+      "usesCleartextTraffic": true
+    },
+    "plugins": ["expo-router", "expo-secure-store", "expo-sqlite", "expo-status-bar"],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}
