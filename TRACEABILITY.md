@@ -5,9 +5,9 @@ Maps every requirement ID to the source files that own it and the automated test
 | ID | Requirement | Source files | Tests |
 | --- | --- | --- | --- |
 | FR-1.1 | Multi-sport taxonomy and event-sourced scoring | `backend/src/domain/sports/index.ts`, `backend/src/domain/scoring/index.ts`, `backend/src/audit/sports.ts`, `backend/src/audit/events.ts`, `backend/src/crypto/sign.ts`, `backend/src/db/seed.ts` | `tests/crypto/sign.test.ts`; `tests/sports/*.test.ts`; `tests/scoring/*.test.ts` |
-| FR-1.2 | League and tournament setup | `backend/src/domain/standings/index.ts` (`registerLeague`), `backend/src/audit/leagues.ts` | stub |
+| FR-1.2 | League and tournament setup | `backend/src/domain/standings/index.ts` (`registerLeague`), `backend/src/audit/leagues.ts` | `tests/standings/*.test.ts` |
 | FR-1.3 | Match and fixture scheduling | `backend/src/domain/fixtures/*.ts`, `backend/src/audit/fixtures.ts` | `tests/fixtures/*.test.ts` |
-| FR-1.4 | Automated standings and tables | `backend/src/domain/standings/index.ts`, `backend/src/audit/standings.ts`, `backend/src/crypto/sign.ts` (`lotsKey`) | `tests/crypto/sign.test.ts` (lots keys); standings: stub |
+| FR-1.4 | Automated standings and tables | `backend/src/domain/standings/index.ts`, `backend/src/audit/standings.ts`, `backend/src/crypto/sign.ts` (`lotsKey`) | `tests/crypto/sign.test.ts` (lots keys); `tests/standings/*.test.ts` |
 | FR-2.1 | Club profiles and tenant isolation | `backend/src/db/schema.sql`, `backend/src/db/seed.ts`, `mobile/src/theme/tenant.ts` | stub |
 | FR-2.2 | Roster and player registry | `backend/src/domain/roster/index.ts`, `backend/src/audit/roster.ts` | stub |
 | FR-2.3 | Integrated club merchandise store | `backend/src/domain/store/index.ts`, `backend/src/audit/checkout.ts`, `backend/src/audit/inventory.ts`, `backend/src/queue/orders.ts`, `backend/src/worker.ts`, `backend/src/storage/minio.ts` | stub |

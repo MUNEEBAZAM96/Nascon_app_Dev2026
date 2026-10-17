@@ -117,7 +117,8 @@ export async function appendEvent(input: unknown): Promise<AppendResult> {
     }
 
     const events = await loadMatchEvents(client, body.match_id);
-    const state = await buildState(events);
+    const row = await loadMatchRow(client, body.match_id);
+    const state = await buildState(events, row);
     const sequence = (events.at(-1)?.sequence ?? 0) + 1;
     await assertLegal(body, state);
     await client.query(
@@ -125,7 +126,7 @@ export async function appendEvent(input: unknown): Promise<AppendResult> {
        VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7)`,
       [body.event_id, body.match_id, body.type, JSON.stringify(body.payload), sequence, signature, hash],
     );
-    await persistMatch(client, body, state, sequence === 1);
+    await persistMatch(client, body, state);
     await client.query('COMMIT');
     return {
       http_status: 201,
@@ -147,10 +148,11 @@ export async function appendEvent(input: unknown): Promise<AppendResult> {
 /** Rebuilds the score, status, and outcome by replaying the match log. */
 export async function projectScore(matchId: string): Promise<ScoreView> {
   const events = await loadMatchEvents(getPool(), matchId);
-  if (!events.some((event) => event.type === 'match_init')) {
+  const row = await loadMatchRow(getPool(), matchId);
+  if (!events.some((event) => event.type === 'match_init') && !row) {
     throw new AppError(404, 'MATCH_NOT_FOUND', 'Match not found.', { match_id: matchId });
   }
-  const state = await buildState(events);
+  const state = await buildState(events, row);
   return toView(matchId, state, events);
 }
 
@@ -184,16 +186,41 @@ async function loadMatchEvents(db: Db, matchId: string): Promise<EventRow[]> {
   return result.rows.map((row) => ({ ...row, payload: asObject(row.payload) }));
 }
 
-async function buildState(events: EventRow[]): Promise<State> {
+interface MatchRow {
+  id: string;
+  league_id: string | null;
+  sport_id: string;
+  home_team_id: string;
+  away_team_id: string;
+}
+
+async function loadMatchRow(db: Db, matchId: string): Promise<MatchRow | null> {
+  const result = await db.query<MatchRow>(
+    'SELECT id, league_id, sport_id, home_team_id, away_team_id FROM matches WHERE id = $1',
+    [matchId],
+  );
+  return result.rows[0] ?? null;
+}
+
+async function buildState(events: EventRow[], seeded: MatchRow | null = null): Promise<State> {
   const init = events.find((event) => event.type === 'match_init');
   const state = emptyState();
-  if (!init) return state;
-  const sportId = init.payload.sport_id;
-  state.sport = await getSport(typeof sportId === 'string' ? sportId : '');
-  state.leagueId = typeof init.payload.league_id === 'string' && init.payload.league_id.length > 0 ? init.payload.league_id : null;
-  state.homeId = stringField(init.payload, 'home_team_id');
-  state.awayId = stringField(init.payload, 'away_team_id');
-  state.hasInit = true;
+  if (init) {
+    const sportId = init.payload.sport_id;
+    state.sport = await getSport(typeof sportId === 'string' ? sportId : '');
+    state.leagueId = typeof init.payload.league_id === 'string' && init.payload.league_id.length > 0 ? init.payload.league_id : null;
+    state.homeId = stringField(init.payload, 'home_team_id');
+    state.awayId = stringField(init.payload, 'away_team_id');
+    state.hasInit = true;
+  } else if (seeded) {
+    state.sport = await getSport(seeded.sport_id);
+    state.leagueId = seeded.league_id && seeded.league_id.length > 0 ? seeded.league_id : null;
+    state.homeId = seeded.home_team_id;
+    state.awayId = seeded.away_team_id;
+    state.hasInit = true;
+  } else {
+    return state;
+  }
   state.compensatedBy = compensationMap(events);
   for (const event of events) {
     if (event.type === 'match_start') state.hasStart = true;
@@ -325,9 +352,9 @@ function assertTiebreak(body: EnvelopeBody, state: State): void {
   }
 }
 
-async function persistMatch(client: PoolClient, body: EnvelopeBody, state: State, isFirst: boolean): Promise<void> {
+async function persistMatch(client: PoolClient, body: EnvelopeBody, state: State): Promise<void> {
   const status = body.type === 'match_end' ? 'completed' : body.type === 'match_start' ? 'in_progress' : phaseOf(state) === 'none' ? 'upcoming' : phaseOf(state);
-  if (body.type === 'match_init' || isFirst) {
+  if (body.type === 'match_init') {
     const leagueId = typeof body.payload.league_id === 'string' && body.payload.league_id.length > 0 ? body.payload.league_id : null;
     await client.query(
       `INSERT INTO matches (id, league_id, sport_id, home_team_id, away_team_id, status)
