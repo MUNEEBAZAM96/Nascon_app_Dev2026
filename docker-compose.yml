@@ -34,7 +34,8 @@ services:
       retries: 30
 
   minio:
-    image: minio/minio
+    # minio/minio is no longer pullable from Docker Hub; Chainguard publishes the same open-source server.
+    image: cgr.dev/chainguard/minio:latest
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: sideline

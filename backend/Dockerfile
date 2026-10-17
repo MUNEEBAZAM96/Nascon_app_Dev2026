@@ -7,7 +7,7 @@ RUN npm ci
 
 COPY tsconfig.json ./
 COPY src ./src
-RUN npx tsc && cp src/db/schema.sql dist/db/schema.sql && npm prune --omit=dev
+RUN npx tsc && cp src/db/schema.sql dist/db/schema.sql && npm prune --omit=dev && chmod -R a+rX /app
 
 ENV NODE_ENV=production
 USER node
