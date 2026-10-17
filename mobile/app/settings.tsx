@@ -39,7 +39,7 @@ export default function SettingsScreen() {
         autoCapitalize="none"
         autoCorrect={false}
         keyboardType="url"
-        accessibilityLabel="Server address"
+        accessibilityLabel="Server address "
       />
       {message ? (
         <Text style={[styles.help, { color: message.isError ? colors.danger : colors.online }]} accessibilityLiveRegion="polite">
