@@ -8,7 +8,8 @@ export function registerRoster(app: FastifyInstance): void {
   });
 
   app.post('/audit/v1/roster/transfer', async (request, reply) => {
-    return reply.status(201).send(await transferPlayer(request.body));
+    const { http_status, ...body } = await transferPlayer(request.body);
+    return reply.status(http_status).send(body);
   });
 
   app.get<{ Params: { player_id: string }; Querystring: { as_of?: string } }>(
