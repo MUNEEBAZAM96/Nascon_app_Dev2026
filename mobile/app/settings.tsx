@@ -28,7 +28,8 @@ export default function SettingsScreen() {
     <Screen title="Settings">
       <Text style={styles.label}>Server address</Text>
       <Text style={styles.help}>
-        Emulator: http://10.0.2.2:8080. Phone: your laptop's LAN IP, for example http://192.168.1.20:8080.
+        iOS Simulator: http://127.0.0.1:8080. Android emulator: http://10.0.2.2:8080. Physical phone: your
+        laptop's LAN IP, for example http://192.168.1.20:8080.
       </Text>
       <TextInput
         style={styles.input}

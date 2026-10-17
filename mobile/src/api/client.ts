@@ -1,9 +1,13 @@
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 import { getToken } from '../auth/token';
 
 const BASE_URL_KEY = 'sideline.baseUrl';
-export const DEFAULT_BASE_URL = 'http://10.0.2.2:8080';
+
+// Android emulator reaches the host at 10.0.2.2. iOS Simulator shares the Mac network stack.
+export const DEFAULT_BASE_URL =
+  Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://127.0.0.1:8080';
 
 export async function getBaseUrl(): Promise<string> {
   return (await SecureStore.getItemAsync(BASE_URL_KEY)) ?? DEFAULT_BASE_URL;
