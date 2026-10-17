@@ -1,10 +1,12 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, StyleSheet, Text } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError, DEMO, api, type PlayerHistory } from '../../src/api/client';
 import { useSession } from '../../src/auth/session';
 import { Button } from '../../src/components/Button';
+import { IconBadge } from '../../src/components/IconBadge';
 import { Card, LoadingBars, Screen } from '../../src/components/Screen';
 import { displayName, roleLabel } from '../../src/theme/names';
 import { colors, tenantTheme } from '../../src/theme/tenant';
@@ -92,6 +94,25 @@ export default function RosterScreen() {
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {player ? (
         <>
+          <Card>
+            <View style={styles.titleRow}>
+              <IconBadge name="person" />
+              <Text style={styles.title}>Demo Striker</Text>
+            </View>
+            <View style={styles.lineRow}>
+              <Ionicons name="shirt-outline" size={18} color="#4B5563" accessibilityElementsHidden />
+              <Text style={styles.line}>Squad {displayName(player.current_squad_id)}</Text>
+            </View>
+            <View style={styles.lineRow}>
+              <Ionicons
+                name={player.role === 'substitute' ? 'swap-horizontal' : 'star'}
+                size={18}
+                color={player.role === 'starter' || player.role === 'captain' ? '#D97706' : '#4B5563'}
+                accessibilityElementsHidden
+              />
+              <Text style={styles.line}>Role {roleLabel(player.role)}</Text>
+            </View>
+          </Card>
           {SETUP.squads.map((squad) => (
             <Card key={squad.squad_id}>
               <Text style={styles.title}>{squad.name}</Text>
@@ -105,7 +126,10 @@ export default function RosterScreen() {
             </Card>
           ))}
           {player.current_squad_id && player.current_squad_id !== 'sq-demo-b' ? (
-            <Button label="Move Demo Striker to Demo Rovers" color={theme.primary} onPress={confirmMove} loading={moving} />
+            <View style={styles.lineRow}>
+              <Ionicons name="arrow-forward" size={18} color="#0B6E4F" accessibilityElementsHidden />
+              <View style={styles.action}><Button label="Move Demo Striker to Demo Rovers" color={theme.primary} onPress={confirmMove} loading={moving} /></View>
+            </View>
           ) : (
             <Text style={styles.line}>Demo Striker is already at Demo Rovers.</Text>
           )}
@@ -126,7 +150,10 @@ async function readOrCreate(): Promise<PlayerHistory> {
 }
 
 const styles = StyleSheet.create({
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: { fontSize: 20, fontWeight: '800', color: colors.text },
+  lineRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   line: { fontSize: 16, color: colors.text },
+  action: { flex: 1 },
   error: { fontSize: 15, color: colors.danger },
 });

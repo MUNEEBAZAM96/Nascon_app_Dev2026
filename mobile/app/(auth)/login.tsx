@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -45,6 +46,7 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.band}>
+        <Ionicons name="football" size={28} color="#FFFFFF" accessibilityElementsHidden />
         <Text style={styles.title} accessibilityRole="header">Sideline</Text>
         <Text style={styles.bandSub}>Alpha Sports</Text>
       </View>
@@ -66,6 +68,8 @@ export default function LoginScreen() {
                 }}
                 style={[styles.chip, selected && styles.chipOn]}
               >
+                {account.label === 'Organizer' ? <Ionicons name="create" size={16} color={selected ? '#FFFFFF' : BRAND} accessibilityElementsHidden /> : null}
+                {account.label === 'Manager' ? <Ionicons name="people" size={16} color={selected ? '#FFFFFF' : BRAND} accessibilityElementsHidden /> : null}
                 <Text style={[styles.chipText, selected && styles.chipTextOn]}>{account.label}</Text>
               </Pressable>
             );
@@ -124,6 +128,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 6,
     backgroundColor: '#FFFFFF',
   },
   chipOn: { backgroundColor: BRAND },

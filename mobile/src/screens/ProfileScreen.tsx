@@ -1,8 +1,10 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 
 import { useSession } from '../auth/session';
 import { Button } from '../components/Button';
+import { IconBadge } from '../components/IconBadge';
 import { Screen, Section } from '../components/Screen';
 import { colors, spacing, tenantTheme } from '../theme/tenant';
 
@@ -36,12 +38,18 @@ export default function ProfileScreen() {
   return (
     <Screen title="Profile">
       <View style={[styles.tenantBar, { backgroundColor: theme.primary }]} accessibilityLabel={`Tenant ${theme.name}`}>
-        <Text style={styles.tenantName}>{theme.name}</Text>
+        <View style={styles.tenantRow}>
+          <Ionicons name="shield-checkmark" size={22} color="#FFFFFF" accessibilityElementsHidden />
+          <Text style={styles.tenantName}>{theme.name}</Text>
+        </View>
         <Text style={styles.tenantSub}>Alpha United · Alpha Arena</Text>
       </View>
 
       <Section title="Signed in as">
-        <Text style={styles.value}>{claims?.email ?? 'Unknown user'}</Text>
+        <View style={styles.signedIn}>
+          <IconBadge name="person" />
+          <Text style={styles.value}>{claims?.email ?? 'Unknown user'}</Text>
+        </View>
         <Text style={styles.role}>{claims ? ROLE_LABELS[claims.role] ?? claims.role : 'No role'}</Text>
         <Text style={styles.muted}>{claims ? ROLE_HELP[claims.role] ?? '' : ''}</Text>
       </Section>
@@ -54,20 +62,36 @@ export default function ProfileScreen() {
 
       <View style={styles.actions}>
         {claims?.role === 'club_manager' ? (
-          <Button label="Manage roster" onPress={() => router.push('/roster')} color={theme.primary} />
+          <View style={styles.actionRow}>
+            <Ionicons name="people" size={20} color={theme.primary} accessibilityElementsHidden />
+            <View style={styles.actionButton}><Button label="Manage roster" onPress={() => router.push('/roster')} color={theme.primary} /></View>
+          </View>
         ) : null}
         {claims?.role === 'league_organizer' ? (
-          <Button label="Enter a score" onPress={() => router.push('/score')} color={theme.primary} />
+          <View style={styles.actionRow}>
+            <Ionicons name="create" size={20} color={theme.primary} accessibilityElementsHidden />
+            <View style={styles.actionButton}><Button label="Enter a score" onPress={() => router.push('/score')} color={theme.primary} /></View>
+          </View>
         ) : null}
-        <Button label="Settings" variant="secondary" onPress={() => router.push('/settings')} />
-        <Button label="Sign out" variant="secondary" color={colors.danger} onPress={confirmSignOut} />
+        <View style={styles.actionRow}>
+          <Ionicons name="settings-outline" size={20} color={colors.text} accessibilityElementsHidden />
+          <View style={styles.actionButton}><Button label="Settings" variant="secondary" onPress={() => router.push('/settings')} /></View>
+        </View>
+        <View style={styles.actionRow}>
+          <Ionicons name="log-out" size={20} color="#B91C1C" accessibilityElementsHidden />
+          <View style={styles.actionButton}><Button label="Sign out" variant="secondary" color={colors.danger} onPress={confirmSignOut} /></View>
+        </View>
       </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  tenantBar: { borderRadius: 12, padding: spacing.md },
+  tenantBar: { borderRadius: 12, padding: spacing.md, gap: 4 },
+  tenantRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  signedIn: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  actionRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  actionButton: { flex: 1 },
   tenantName: { color: '#FFFFFF', fontSize: 22, fontWeight: '800' },
   tenantSub: { color: '#E8F5E9', fontSize: 15 },
   value: { fontSize: 16, fontWeight: '700', color: colors.text },

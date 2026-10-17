@@ -1,5 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, TextInput } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { DEFAULT_BASE_URL, getBaseUrl, setBaseUrl } from '../src/api/client';
 import { Button } from '../src/components/Button';
@@ -26,7 +27,10 @@ export default function SettingsScreen() {
 
   return (
     <Screen title="Settings">
-      <Text style={styles.label}>Server address</Text>
+      <View style={styles.labelRow}>
+        <Ionicons name="globe-outline" size={18} color="#4B5563" accessibilityElementsHidden />
+        <Text style={styles.label}>Server address</Text>
+      </View>
       <Text style={styles.help}>
         iOS Simulator: http://127.0.0.1:8080. Android emulator: http://10.0.2.2:8080. Physical phone: your
         laptop's LAN IP, for example http://192.168.1.20:8080.
@@ -52,6 +56,7 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   label: { fontSize: 16, fontWeight: '600', color: colors.text },
   help: { fontSize: 15, color: colors.muted },
   input: {

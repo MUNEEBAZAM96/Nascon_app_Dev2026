@@ -2,7 +2,10 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { Ionicons } from '@expo/vector-icons';
+
 import { ApiError, api, type ScoreView } from '../../src/api/client';
+import { IconBadge } from '../../src/components/IconBadge';
 import { useSession } from '../../src/auth/session';
 import { Button } from '../../src/components/Button';
 import { Card, LoadingBars, Screen, StatusPill } from '../../src/components/Screen';
@@ -54,6 +57,7 @@ export default function ScoreScreen() {
       {score ? (
         <Card tone={theme.secondary}>
           <View style={styles.hero}>
+            <IconBadge name="create" />
             <Text style={styles.team}>{displayName(score.home.team_id)}</Text>
             <Text style={styles.big}>{score.home.score} – {score.away.score}</Text>
             <Text style={styles.team}>{displayName(score.away.team_id)}</Text>
@@ -62,13 +66,21 @@ export default function ScoreScreen() {
           </View>
           {error ? <Text style={styles.error}>{error}</Text> : null}
           {score.status === 'upcoming' ? (
-            <Button
-              label="Start match"
-              color={theme.primary}
-              loading={busy}
-              onPress={() => void send({ event_id: 'demo-match-2-start', type: 'match_start', payload: {} })}
-            />
+            <View style={styles.actionRow}>
+              <Ionicons name="play" size={18} color="#0B6E4F" accessibilityElementsHidden />
+              <View style={styles.action}>
+                <Button
+                  label="Start match"
+                  color={theme.primary}
+                  loading={busy}
+                  onPress={() => void send({ event_id: 'demo-match-2-start', type: 'match_start', payload: {} })}
+                />
+              </View>
+            </View>
           ) : null}
+          <View style={styles.actionRow}>
+            <Ionicons name="football" size={18} color="#0B6E4F" accessibilityElementsHidden />
+            <View style={styles.action}>
           <Button
             label="Add goal for City"
             color={theme.primary}
@@ -79,6 +91,8 @@ export default function ScoreScreen() {
               payload: { team_id: 'demo-t3', event_type: 'goal' },
             })}
           />
+            </View>
+          </View>
           <Button
             label="Undo last goal"
             variant="secondary"
@@ -110,4 +124,6 @@ const styles = StyleSheet.create({
   big: { fontSize: 56, fontWeight: '800', color: colors.text },
   muted: { fontSize: 15, color: colors.muted },
   error: { fontSize: 15, color: colors.danger },
+  actionRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  action: { flex: 1 },
 });

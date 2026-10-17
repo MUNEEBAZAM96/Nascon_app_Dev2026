@@ -1,37 +1,40 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { ApiError, DEMO, JERSEY_PRICE, api, formatPkr, type InventoryView } from '../api/client';
-import { useSession } from '../auth/session';
 import { Button } from '../components/Button';
+import { FadeIn } from '../components/PressableCard';
 import { Card, LoadingBars, Screen } from '../components/Screen';
-import { colors, spacing, tenantTheme } from '../theme/tenant';
+import { colors, spacing } from '../theme/tenant';
 
 export default function StoreScreen({ active = true }: { active?: boolean }) {
-  const { claims } = useSession();
-  const theme = tenantTheme(claims?.tenant_id);
   const [sizes, setSizes] = useState<{ M: InventoryView; L: InventoryView } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [size, setSize] = useState<'M' | 'L'>('M');
+  const [refreshing, setRefreshing] = useState(false);
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<{ id: string; total: string } | null>(null);
+  const loaded = useRef(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (mode: 'initial' | 'refresh' = 'initial') => {
+    if (mode === 'refresh') setRefreshing(true);
+    else if (!loaded.current) setLoading(true);
     setError(null);
     try {
       const [medium, large] = await Promise.all([api.inventory(DEMO.variants.M), api.inventory(DEMO.variants.L)]);
       setSizes({ M: medium, L: large });
+      loaded.current = true;
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not load the store.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
   useEffect(() => {
-    if (active) void load();
+    if (active) void load('initial');
   }, [active, load]);
 
   async function pay() {
@@ -42,7 +45,7 @@ export default function StoreScreen({ active = true }: { active?: boolean }) {
       const order = await api.checkout({
         order_id: `ord-demo-${Date.now()}`,
         customer_id: 'cust-demo',
-        items: [{ variant_id: DEMO.variants[size], quantity: 1 }],
+        items: [{ variant_id: DEMO.variants.M, quantity: 1 }],
         payment: { token: 'tok_success' },
       });
       setReceipt({ id: order.order_id, total: formatPkr(order.total_minor) });
@@ -59,82 +62,88 @@ export default function StoreScreen({ active = true }: { active?: boolean }) {
     }
   }
 
+  const soldOut = sizes?.M.stock === 0;
+
   return (
-    <Screen title="Store">
-      {loading ? <Card><LoadingBars label="Loading store" /></Card> : null}
+    <Screen title="Store" refreshing={refreshing} onRefresh={() => void load('refresh')}>
+      {loading && !loaded.current ? <Card><LoadingBars label="Loading store" /></Card> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {receipt ? (
-        <View style={styles.receipt}>
-          <Text style={styles.paid}>Receipt</Text>
-          <Text style={styles.receiptId}>Order {receipt.id}</Text>
-          <Text style={styles.price}>{receipt.total}</Text>
-        </View>
+        <FadeIn>
+          <View style={styles.receipt}>
+            <View style={styles.perforation}>
+              {Array.from({ length: 12 }, (_, notch) => <View key={notch} style={styles.notch} />)}
+            </View>
+            <Ionicons name="receipt" size={22} color="#047857" accessibilityElementsHidden />
+            <Text style={styles.receiptId}>{receipt.id}</Text>
+            <Text style={styles.paid}>Paid</Text>
+            <Text style={styles.receiptPrice}>{receipt.total}</Text>
+          </View>
+        </FadeIn>
       ) : null}
       {sizes ? (
-        <Card>
-          <Text style={styles.title}>Home jersey</Text>
-          <Text style={styles.price}>{JERSEY_PRICE}</Text>
-          <Text style={styles.muted}>Choose a size, then pay with the practice card.</Text>
-          <View style={styles.sizes}>
-            {(['M', 'L'] as const).map((option) => {
-              const selected = option === size;
-              const stock = sizes[option].stock;
-              return (
-                <Pressable
-                  key={option}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Size ${option}, ${stock} in stock`}
-                  accessibilityState={{ selected }}
-                  onPress={() => setSize(option)}
-                  style={[styles.sizeBtn, selected && { backgroundColor: theme.primary, borderColor: theme.primary }]}
-                >
-                  <Text style={[styles.sizeText, selected && styles.sizeTextOn]}>Size {option}</Text>
-                  <Text style={[styles.sizeStock, selected && styles.sizeTextOn]}>{stock === 0 ? 'Sold out' : `${stock} left`}</Text>
-                </Pressable>
-              );
-            })}
+        <>
+          <View style={styles.product}>
+            <View style={styles.band}>
+              <Ionicons name="shirt" size={28} color="#FFFFFF" />
+            </View>
+            <View style={styles.productBody}>
+              <Text style={styles.title}>Home jersey</Text>
+              <View style={styles.pill}><Text style={styles.pillText}>Size M</Text></View>
+              <Text style={styles.price}>{JERSEY_PRICE}</Text>
+              <View style={styles.stockRow}>
+                <Ionicons name="cube-outline" size={16} color="#4B5563" accessibilityElementsHidden />
+                <Text style={styles.muted}>{soldOut ? 'Sold out' : `${sizes.M.stock} in stock`}</Text>
+              </View>
+              <Button label={soldOut ? 'Sold out' : 'Pay'} color="#0B6E4F" disabled={soldOut} loading={paying} onPress={() => void pay()} />
+            </View>
           </View>
-          <Button
-            label={sizes[size].stock === 0 ? 'Sold out' : `Buy size ${size}`}
-            color={theme.primary}
-            disabled={sizes[size].stock === 0}
-            loading={paying}
-            onPress={() => void pay()}
-          />
-        </Card>
+          <Card>
+            <Ionicons name="shirt-outline" size={22} color="#4B5563" />
+            <Text style={styles.secondaryTitle}>Home jersey</Text>
+            <View style={styles.pillMuted}><Text style={styles.pillMutedText}>Size L</Text></View>
+            <Text style={styles.secondaryPrice}>{JERSEY_PRICE}</Text>
+            <Text style={styles.muted}>{sizes.L.stock === 0 ? 'Sold out' : `${sizes.L.stock} in stock`}</Text>
+          </Card>
+        </>
       ) : null}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 22, fontWeight: '800', color: colors.text },
-  price: { fontSize: 28, fontWeight: '800', color: colors.text },
-  muted: { fontSize: 15, color: colors.muted, lineHeight: 22 },
-  sizes: { flexDirection: 'row', gap: spacing.sm },
-  sizeBtn: {
-    flex: 1,
-    minHeight: 64,
-    borderRadius: 12,
-    borderWidth: 1.5,
+  product: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
     borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
+    backgroundColor: '#FFFFFF',
   },
-  sizeText: { fontSize: 16, fontWeight: '800', color: colors.text },
-  sizeStock: { fontSize: 13, color: colors.muted },
-  sizeTextOn: { color: '#FFFFFF' },
+  band: { height: 72, backgroundColor: '#0B6E4F', alignItems: 'center', justifyContent: 'center' },
+  productBody: { padding: spacing.md, gap: spacing.sm },
+  title: { fontSize: 20, fontWeight: '800', color: colors.text },
+  secondaryTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+  pill: { alignSelf: 'flex-start', borderRadius: 999, backgroundColor: '#E8F5E9', paddingHorizontal: 10, paddingVertical: 4 },
+  pillText: { color: '#0B6E4F', fontWeight: '700', fontSize: 13 },
+  pillMuted: { alignSelf: 'flex-start', borderRadius: 999, backgroundColor: '#F3F4F6', paddingHorizontal: 10, paddingVertical: 4 },
+  pillMutedText: { color: '#4B5563', fontWeight: '700', fontSize: 13 },
+  price: { fontSize: 18, fontWeight: '800', color: colors.text },
+  secondaryPrice: { fontSize: 16, fontWeight: '700', color: colors.text },
+  muted: { fontSize: 15, color: colors.muted },
+  stockRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   error: { fontSize: 15, color: colors.danger },
   receipt: {
-    gap: 4,
-    padding: spacing.md,
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#047857',
-    borderLeftWidth: 6,
-    backgroundColor: '#FFFFFF',
+    borderStyle: 'dashed',
+    padding: spacing.md,
+    gap: 4,
   },
+  perforation: { flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: -6, marginBottom: spacing.sm },
+  notch: { width: 12, height: 6, borderBottomLeftRadius: 6, borderBottomRightRadius: 6, backgroundColor: '#E5E7EB' },
   receiptId: { fontSize: 15, color: colors.text },
   paid: { fontSize: 16, fontWeight: '800', color: '#047857' },
+  receiptPrice: { fontSize: 22, fontWeight: '800', color: colors.text },
 });

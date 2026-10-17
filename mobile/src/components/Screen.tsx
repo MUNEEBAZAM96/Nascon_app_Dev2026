@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { colors, spacing } from '../theme/tenant';
 
@@ -16,11 +16,19 @@ interface ScreenProps {
   title: string;
   emptyText?: string;
   children?: ReactNode;
+  refreshing?: boolean;
+  onRefresh?: () => void;
 }
 
-export function Screen({ title, emptyText, children }: ScreenProps) {
+export function Screen({ title, emptyText, children, refreshing, onRefresh }: ScreenProps) {
   return (
-    <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.root}
+      contentContainerStyle={styles.content}
+      refreshControl={onRefresh ? (
+        <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor="#0B6E4F" colors={['#0B6E4F']} />
+      ) : undefined}
+    >
       <Text style={styles.srOnly} accessibilityRole="header">
         {title}
       </Text>
@@ -41,8 +49,8 @@ export function Section({ title, children }: { title: string; children?: ReactNo
   );
 }
 
-export function Card({ children, tone }: { children?: ReactNode; tone?: string }) {
-  return <View style={[styles.card, tone ? { backgroundColor: tone } : null]}>{children}</View>;
+export function Card({ children, tone, flush }: { children?: ReactNode; tone?: string; flush?: boolean }) {
+  return <View style={[styles.card, flush && styles.flush, tone ? { backgroundColor: tone } : null]}>{children}</View>;
 }
 
 export function StatusPill({ status }: { status: string }) {
@@ -85,6 +93,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     gap: spacing.sm,
   },
+  flush: { padding: 0, overflow: 'hidden', flexDirection: 'row' },
   pill: { alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
   pillText: { fontSize: 13, fontWeight: '700' },
   loading: { gap: spacing.sm },
