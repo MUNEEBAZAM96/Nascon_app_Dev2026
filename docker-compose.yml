@@ -1,5 +1,6 @@
 x-backend-env: &backend-env
   DAY1_SALT: ${DAY1_SALT}
+  DAY2_SALT: ${DAY2_SALT}
   JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret}
   DATABASE_URL: postgres://sideline:sideline@postgres:5432/sideline
   REDIS_URL: redis://redis:6379

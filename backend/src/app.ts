@@ -9,6 +9,7 @@ import { registerHealth } from './audit/health';
 import { registerInventory } from './audit/inventory';
 import { registerLeagues } from './audit/leagues';
 import { registerOfflineSync } from './audit/offlineSync';
+import { registerPhase2 } from './audit/phase2';
 import { registerRbac } from './audit/rbac';
 import { registerReset } from './audit/reset';
 import { registerRoster } from './audit/roster';
@@ -41,6 +42,7 @@ export function buildApp(): FastifyInstance {
   registerInventory(app);
   registerRbac(app);
   registerOfflineSync(app);
+  registerPhase2(app);
 
   registerPing(app);
   registerAuth(app);
