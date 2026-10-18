@@ -1,5 +1,9 @@
+import { createHash } from 'node:crypto';
+
 import type { PoolClient } from 'pg';
 
+import { loadConfig } from '../config';
+import { canonical, sign } from '../crypto/sign';
 import { getPool } from './pool';
 
 export interface ResetInput {
@@ -109,6 +113,7 @@ const PLAYERS = [
   { id: 'player-alpha-1', name: 'Ali', position: 'gk', club: 'club-alpha-1' },
   { id: 'player-alpha-2', name: 'Bilal', position: 'df', club: 'club-alpha-2' },
   { id: 'player-beta-1', name: 'Sara', position: 'gk', club: 'club-beta-1' },
+  { id: 'player-beta-2', name: 'Hina', position: 'mf', club: 'club-beta-1' },
 ];
 
 const APP_TABLES = [
@@ -132,6 +137,9 @@ const APP_TABLES = [
   'roster_audit',
   'roster_requests',
   'offline_actions',
+  'qr_links',
+  'guest_tokens',
+  'carts',
 ];
 
 export async function reset(input: ResetInput = {}): Promise<ResetResult> {
@@ -270,6 +278,46 @@ async function insertBaseline(client: PoolClient, seed: number, stock: Record<st
       [id, home, away],
     );
   }
+
+  await client.query(
+    `INSERT INTO matches (id, league_id, sport_id, home_team_id, away_team_id, status)
+     VALUES ('match-m1', 'league-alpha-1', 'football', 'club-alpha-1', 'club-alpha-2', 'in_progress')`,
+  );
+  await insertSignedEvent(client, 'match-m1-start', 'match-m1', 'match_start', {}, 1);
+  await insertSignedEvent(client, 'match-m1-goal', 'match-m1', 'score', { team_id: 'club-alpha-1', event_type: 'goal' }, 2);
+
+  await client.query(
+    `INSERT INTO qr_links (entity_id, entity_type, short_url, scan_count) VALUES
+       ('match-m1', 'match', 'http://localhost:8080/q/m1-live', 0),
+       ('player-alpha-1', 'player', 'http://localhost:8080/q/p-alpha-1', 0),
+       ('club-alpha-1', 'club', 'http://localhost:8080/q/c-alpha-1', 0)`,
+  );
+  await client.query(
+    `INSERT INTO guest_tokens (token, merged, role) VALUES ('guest_anon_tok_7721', false, 'read-only')`,
+  );
+  await client.query(`INSERT INTO carts (user_id, items) VALUES ('player-alpha-1', '[]'::jsonb)`);
+}
+
+function insertSignedEvent(
+  client: PoolClient,
+  eventId: string,
+  matchId: string,
+  type: string,
+  payload: Record<string, unknown>,
+  sequence: number,
+): Promise<unknown> {
+  const signature = sign(loadConfig().day1Salt, eventId, payload);
+  const requestHash = createHash('sha256').update(canonical({
+    event_id: eventId,
+    match_id: matchId,
+    type,
+    payload,
+  }), 'utf8').digest('hex');
+  return client.query(
+    `INSERT INTO match_events (id, match_id, type, payload, sequence, signature, request_hash)
+     VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7)`,
+    [eventId, matchId, type, JSON.stringify(payload), sequence, signature, requestHash],
+  );
 }
 
 export async function isSeeded(): Promise<boolean> {

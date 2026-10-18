@@ -180,3 +180,21 @@ CREATE TABLE IF NOT EXISTS offline_actions (
   result    jsonb NOT NULL,
   PRIMARY KEY (device_id, action_id)
 );
+
+CREATE TABLE IF NOT EXISTS qr_links (
+  entity_id   text PRIMARY KEY,
+  entity_type text NOT NULL,
+  short_url   text NOT NULL,
+  scan_count  int NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS guest_tokens (
+  token  text PRIMARY KEY,
+  merged boolean NOT NULL DEFAULT false,
+  role   text NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS carts (
+  user_id text PRIMARY KEY,
+  items   jsonb NOT NULL
+);
