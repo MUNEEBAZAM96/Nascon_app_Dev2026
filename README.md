@@ -15,7 +15,7 @@ curl http://localhost:8080/health      # {"status":"ok"}
 
 `DAY1_SALT` is read only from the environment at startup. The API refuses to start without it. Never commit the real salt; `.env.example` lists variable names only.
 
-Services: `api` (host port 8080), `worker` (BullMQ consumer, same image), `postgres`, `redis`, `minio` (console on 9001).
+Services: `api` (host port 8080), `worker` (BullMQ consumer, same image), `postgres`, `redis`, `minio` (console on 9001), `media` (1935/8888/8889), Selenium Grid hub on **4444** (two Chromium nodes + one Firefox; browsers use `http://host.docker.internal:8080` to reach the API).
 
 Reset to the baseline at any time:
 

@@ -12,6 +12,19 @@ x-backend-env: &backend-env
   PORT: "8080"
   MEDIA_HEALTH_URL: http://media:8888/
 
+# Grid browsers (Slice 12) reach the API on the host at http://host.docker.internal:8080
+x-selenium-node: &selenium-node
+  shm_size: "1gb"
+  depends_on:
+    - selenium-hub
+  environment:
+    SE_EVENT_BUS_HOST: selenium-hub
+    SE_EVENT_BUS_PUBLISH_PORT: "4442"
+    SE_EVENT_BUS_SUBSCRIBE_PORT: "4443"
+    SE_START_VNC: "false"
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+
 services:
   postgres:
     image: postgres:16
@@ -96,6 +109,23 @@ services:
       minio:
         condition: service_started
     restart: unless-stopped
+
+  selenium-hub:
+    image: seleniarm/hub:latest
+    ports:
+      - "4444:4444"
+
+  chrome-node-1:
+    <<: *selenium-node
+    image: seleniarm/node-chromium:latest
+
+  chrome-node-2:
+    <<: *selenium-node
+    image: seleniarm/node-chromium:latest
+
+  firefox-node:
+    <<: *selenium-node
+    image: seleniarm/node-firefox:latest
 
 volumes:
   pgdata:
