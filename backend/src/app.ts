@@ -23,6 +23,7 @@ import { registerRoster } from './audit/roster';
 import { registerSports } from './audit/sports';
 import { registerStandings } from './audit/standings';
 import { registerStream } from './audit/stream';
+import { registerWeb } from './audit/web';
 import { registerErrorHandling, registerJsonParser } from './http/errors';
 import { registerSse } from './realtime/sse';
 
@@ -57,6 +58,7 @@ export function buildApp(): FastifyInstance {
   registerCostream(app);
   registerMetrics(app);
   registerPrivacy(app);
+  registerWeb(app);
   registerPhase2(app);
 
   registerPing(app);

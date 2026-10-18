@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "typeRoots": ["../backend/node_modules/@types"],
+    "paths": {
+      "fastify": ["../backend/node_modules/fastify"],
+      "fastify/*": ["../backend/node_modules/fastify/*"]
+    }
+  },
+  "include": ["**/*.ts"]
+}
