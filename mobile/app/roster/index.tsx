@@ -8,6 +8,9 @@ import { useSession } from '../../src/auth/session';
 import { Button } from '../../src/components/Button';
 import { IconBadge } from '../../src/components/IconBadge';
 import { Card, LoadingBars, Screen } from '../../src/components/Screen';
+import { enqueue, list } from '../../src/queue/pending';
+import { newActionId, stamp } from '../../src/queue/types';
+import { useSyncStatus } from '../../src/sync/status';
 import { displayName, roleLabel } from '../../src/theme/names';
 import { colors, tenantTheme } from '../../src/theme/tenant';
 
@@ -39,6 +42,9 @@ export default function RosterScreen() {
   const [loading, setLoading] = useState(true);
   const [moving, setMoving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState<string | null>(null);
+  const { status, refreshPending } = useSyncStatus();
+  const savedLine = 'Saved on this phone. It will sync when you are back online.';
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,6 +54,8 @@ export default function RosterScreen() {
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not load the roster.');
     } finally {
+      const queued = await list();
+      setSaved(queued.some((action) => action.type === 'roster_transfer') ? savedLine : null);
       setLoading(false);
     }
   }, []);
@@ -68,18 +76,31 @@ export default function RosterScreen() {
   async function move(fromSquadId: string) {
     setMoving(true);
     setError(null);
+    const body = {
+      request_id: `tr-demo-${Date.now()}`,
+      league_id: 'lg-demo',
+      player_id: DEMO.rosterPlayer,
+      type: 'transfer',
+      from_squad_id: fromSquadId,
+      to_squad_id: 'sq-demo-b',
+      effective_date: DEMO.asOf,
+      requested_by: 'user-manager',
+      reason: 'Demo move',
+    };
     try {
-      await api.transfer({
-        request_id: `tr-demo-${Date.now()}`,
-        league_id: 'lg-demo',
-        player_id: DEMO.rosterPlayer,
-        type: 'transfer',
-        from_squad_id: fromSquadId,
-        to_squad_id: 'sq-demo-b',
-        effective_date: DEMO.asOf,
-        requested_by: 'user-manager',
-        reason: 'Demo move',
-      });
+      if (status === 'offline') {
+        await enqueue({
+          action_id: newActionId(),
+          type: 'roster_transfer',
+          queued_at: stamp(),
+          base_version: player ? player.history.length : 0,
+          payload: body,
+        });
+        setSaved(savedLine);
+        await refreshPending();
+        return;
+      }
+      await api.transfer(body);
       setPlayer(await api.playerHistory(DEMO.rosterPlayer, DEMO.asOf));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'The move could not be completed.');
@@ -91,6 +112,7 @@ export default function RosterScreen() {
   return (
     <Screen title="Roster">
       {loading ? <Card><LoadingBars label="Loading roster" /></Card> : null}
+      {saved ? <Text style={styles.saved}>{saved}</Text> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {player ? (
         <>
@@ -156,4 +178,5 @@ const styles = StyleSheet.create({
   line: { fontSize: 16, color: colors.text },
   action: { flex: 1 },
   error: { fontSize: 15, color: colors.danger },
+  saved: { fontSize: 15, color: '#0B6E4F' },
 });

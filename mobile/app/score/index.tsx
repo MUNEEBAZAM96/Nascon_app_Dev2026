@@ -9,6 +9,10 @@ import { IconBadge } from '../../src/components/IconBadge';
 import { useSession } from '../../src/auth/session';
 import { Button } from '../../src/components/Button';
 import { Card, LoadingBars, Screen, StatusPill } from '../../src/components/Screen';
+import { loadFixture, saveFixture } from '../../src/db';
+import { enqueue, list } from '../../src/queue/pending';
+import { newActionId, stamp } from '../../src/queue/types';
+import { useSyncStatus } from '../../src/sync/status';
 import { displayName, outcomeLabel } from '../../src/theme/names';
 import { colors, spacing, tenantTheme } from '../../src/theme/tenant';
 
@@ -21,29 +25,57 @@ export default function ScoreScreen() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState<string | null>(null);
+  const { status, setStatus, refreshPending } = useSyncStatus();
+  const savedLine = 'Saved on this phone. It will sync when you are back online.';
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      setScore(await api.score(MATCH_ID));
+      const next = await api.score(MATCH_ID);
+      await saveFixture(MATCH_ID, next);
+      setScore(next);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not load the match.');
+      const cached = await loadFixture<ScoreView>(MATCH_ID);
+      if (cached) {
+        setScore(cached);
+        setStatus('offline');
+      } else {
+        setError(err instanceof ApiError ? err.message : 'Could not load the match.');
+      }
     } finally {
+      const queued = await list();
+      setSaved(queued.some((action) => action.type === 'score_event' && action.payload.match_id === MATCH_ID) ? savedLine : null);
       setLoading(false);
     }
-  }, []);
+  }, [setStatus]);
 
   useFocusEffect(useCallback(() => {
     void load();
   }, [load]));
 
-  async function send(body: { event_id: string; type: string; payload: Record<string, unknown> }) {
+  async function send(body: { event_id: string; type: string; payload: Record<string, unknown> }, queueable = false) {
     setBusy(true);
     setError(null);
+    const eventBody = { match_id: MATCH_ID, ...body };
     try {
-      await api.postEvent({ match_id: MATCH_ID, ...body });
-      setScore(await api.score(MATCH_ID));
+      if (queueable && status === 'offline') {
+        await enqueue({
+          action_id: newActionId(),
+          type: 'score_event',
+          queued_at: stamp(),
+          base_version: score?.events.length ?? 0,
+          payload: eventBody,
+        });
+        setSaved(savedLine);
+        await refreshPending();
+        return;
+      }
+      await api.postEvent(eventBody);
+      const next = await api.score(MATCH_ID);
+      await saveFixture(MATCH_ID, next);
+      setScore(next);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'The event was not accepted.');
     } finally {
@@ -64,6 +96,7 @@ export default function ScoreScreen() {
             <StatusPill status={score.status} />
             <Text style={styles.muted}>{outcomeLabel(score.outcome)}</Text>
           </View>
+          {saved ? <Text style={styles.saved}>{saved}</Text> : null}
           {error ? <Text style={styles.error}>{error}</Text> : null}
           {score.status === 'upcoming' ? (
             <View style={styles.actionRow}>
@@ -73,7 +106,7 @@ export default function ScoreScreen() {
                   label="Start match"
                   color={theme.primary}
                   loading={busy}
-                  onPress={() => void send({ event_id: 'demo-match-2-start', type: 'match_start', payload: {} })}
+                  onPress={() => void send({ event_id: 'demo-match-2-start', type: 'match_start', payload: {} }, true)}
                 />
               </View>
             </View>
@@ -89,7 +122,7 @@ export default function ScoreScreen() {
               event_id: `demo-match-2-g-${Date.now()}`,
               type: 'score',
               payload: { team_id: 'demo-t3', event_type: 'goal' },
-            })}
+            }, true)}
           />
             </View>
           </View>
@@ -124,6 +157,7 @@ const styles = StyleSheet.create({
   big: { fontSize: 56, fontWeight: '800', color: colors.text },
   muted: { fontSize: 15, color: colors.muted },
   error: { fontSize: 15, color: colors.danger },
+  saved: { fontSize: 15, color: '#0B6E4F' },
   actionRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   action: { flex: 1 },
 });

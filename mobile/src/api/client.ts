@@ -128,6 +128,7 @@ export interface PlayerHistory {
   player_id: string;
   current_squad_id: string | null;
   role: string | null;
+  history: unknown[];
 }
 
 export interface EventBody {
@@ -173,6 +174,12 @@ export const api = {
   },
   postEvent(body: EventBody) {
     return request<unknown>('/audit/v1/events', { method: 'POST', body: JSON.stringify(body) });
+  },
+  offlineSync(body: { device_id: string; actions: unknown[] }) {
+    return request<{
+      device_id: string;
+      results: Array<{ action_id: string; status: string; error_code: string | null }>;
+    }>('/audit/v1/offline-sync', { method: 'POST', body: JSON.stringify(body) });
   },
   inventory(variantId: string) {
     return request<InventoryView>(`/audit/v1/inventory/${variantId}`);

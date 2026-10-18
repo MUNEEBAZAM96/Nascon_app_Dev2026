@@ -20,3 +20,8 @@ export async function clear(): Promise<void> {
   const db = await getDb();
   await db.runAsync('DELETE FROM pending_actions');
 }
+
+export async function remove(actionId: string): Promise<void> {
+  const db = await getDb();
+  await db.runAsync('DELETE FROM pending_actions WHERE action_id = ?', [actionId]);
+}

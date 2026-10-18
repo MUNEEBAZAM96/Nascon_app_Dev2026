@@ -5,11 +5,13 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { ApiError, JERSEY_PRICE, api, type ScoreEvent, type ScoreView } from '../../src/api/client';
+import { loadFixture, saveFixture } from '../../src/db';
 import { IconBadge } from '../../src/components/IconBadge';
 import { useSession } from '../../src/auth/session';
 import { Button } from '../../src/components/Button';
 import { FadeIn } from '../../src/components/PressableCard';
 import { Card, LoadingBars, Screen, StatusPill } from '../../src/components/Screen';
+import { useSyncStatus } from '../../src/sync/status';
 import { displayName, outcomeLabel } from '../../src/theme/names';
 import { teamColor } from '../../src/theme/teams';
 import { colors, spacing, tenantTheme } from '../../src/theme/tenant';
@@ -21,19 +23,28 @@ export default function MatchScreen() {
   const [score, setScore] = useState<ScoreView | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { setStatus } = useSyncStatus();
 
   const load = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     setError(null);
     try {
-      setScore(await api.score(id));
+      const next = await api.score(id);
+      await saveFixture(id, next);
+      setScore(next);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not load this match.');
+      const cached = await loadFixture<ScoreView>(id);
+      if (cached) {
+        setScore(cached);
+        setStatus('offline');
+      } else {
+        setError(err instanceof ApiError ? err.message : 'Could not load this match.');
+      }
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, setStatus]);
 
   useFocusEffect(useCallback(() => {
     void load();

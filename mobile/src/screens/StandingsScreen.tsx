@@ -4,9 +4,11 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { ApiError, DEMO, api, type StandingsView } from '../api/client';
+import { loadStandings, saveStandings } from '../db';
 import { IconBadge } from '../components/IconBadge';
 import { useSession } from '../auth/session';
 import { Card, LoadingBars, Screen, StatusPill } from '../components/Screen';
+import { useSyncStatus } from '../sync/status';
 import { displayName } from '../theme/names';
 import { teamColor } from '../theme/teams';
 import { colors, spacing, tenantTheme } from '../theme/tenant';
@@ -19,21 +21,31 @@ export default function StandingsScreen({ active = true }: { active?: boolean })
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const loaded = useRef(false);
+  const { setStatus } = useSyncStatus();
 
   const load = useCallback(async (mode: 'initial' | 'refresh' = 'initial') => {
     if (mode === 'refresh') setRefreshing(true);
     else if (!loaded.current) setLoading(true);
     setError(null);
     try {
-      setTable(await api.standings(DEMO.leagueId));
+      const next = await api.standings(DEMO.leagueId);
+      await saveStandings(DEMO.leagueId, next);
+      setTable(next);
       loaded.current = true;
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not load standings.');
+      const cached = await loadStandings<StandingsView>(DEMO.leagueId);
+      if (cached) {
+        setTable(cached);
+        setStatus('offline');
+        loaded.current = true;
+      } else {
+        setError(err instanceof ApiError ? err.message : 'Could not load standings.');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [setStatus]);
 
   useEffect(() => {
     if (active) void load('initial');

@@ -8,3 +8,14 @@ export interface OfflineAction {
   base_version: number;
   payload: Record<string, unknown>;
 }
+
+export function stamp(): string {
+  return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+}
+
+let actionSerial = 0;
+
+export function newActionId(): string {
+  actionSerial += 1;
+  return `act-${Date.now()}-${actionSerial}`;
+}

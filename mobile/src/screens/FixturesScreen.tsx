@@ -4,9 +4,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { ApiError, DEMO, api, ensureDemoMatchPlayed, type ScoreView } from '../api/client';
+import { loadFixture, saveFixture } from '../db';
 import { IconBadge } from '../components/IconBadge';
 import { PressableCard } from '../components/PressableCard';
 import { Card, LoadingBars, Screen, StatusPill } from '../components/Screen';
+import { useSyncStatus } from '../sync/status';
 import { displayName } from '../theme/names';
 import { teamColor } from '../theme/teams';
 import { colors, spacing } from '../theme/tenant';
@@ -17,6 +19,7 @@ export default function FixturesScreen({ active = true }: { active?: boolean }) 
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const loaded = useRef(false);
+  const { setStatus } = useSyncStatus();
 
   const load = useCallback(async (mode: 'initial' | 'refresh' = 'initial') => {
     if (mode === 'refresh') setRefreshing(true);
@@ -25,15 +28,27 @@ export default function FixturesScreen({ active = true }: { active?: boolean }) 
     try {
       await ensureDemoMatchPlayed();
       const rows = await Promise.all(DEMO.matches.map(async (match) => [match.id, await api.score(match.id)] as const));
+      await Promise.all(rows.map(([id, score]) => saveFixture(id, score)));
       setScores(Object.fromEntries(rows));
       loaded.current = true;
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not load fixtures.');
+      const cached: Record<string, ScoreView> = {};
+      for (const match of DEMO.matches) {
+        const row = await loadFixture<ScoreView>(match.id);
+        if (row) cached[match.id] = row;
+      }
+      if (Object.keys(cached).length > 0) {
+        setScores(cached);
+        setStatus('offline');
+        loaded.current = true;
+      } else {
+        setError(err instanceof ApiError ? err.message : 'Could not load fixtures.');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [setStatus]);
 
   useEffect(() => {
     if (active) void load('initial');
