@@ -140,6 +140,7 @@ const APP_TABLES = [
   'qr_links',
   'guest_tokens',
   'carts',
+  'stream_keys',
 ];
 
 export async function reset(input: ResetInput = {}): Promise<ResetResult> {

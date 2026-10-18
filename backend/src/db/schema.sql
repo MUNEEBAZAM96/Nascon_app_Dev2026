@@ -198,3 +198,13 @@ CREATE TABLE IF NOT EXISTS carts (
   user_id text PRIMARY KEY,
   items   jsonb NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS stream_keys (
+  stream_key text PRIMARY KEY,
+  player_id  text NOT NULL,
+  label      text NOT NULL DEFAULT 'default',
+  status     text NOT NULL CHECK (status IN ('active', 'revoked')),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS stream_keys_active_slot_idx ON stream_keys (player_id, label) WHERE status = 'active';

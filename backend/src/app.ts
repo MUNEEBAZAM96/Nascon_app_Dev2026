@@ -15,6 +15,7 @@ import { registerReset } from './audit/reset';
 import { registerRoster } from './audit/roster';
 import { registerSports } from './audit/sports';
 import { registerStandings } from './audit/standings';
+import { registerStream } from './audit/stream';
 import { registerErrorHandling, registerJsonParser } from './http/errors';
 import { registerSse } from './realtime/sse';
 
@@ -42,6 +43,7 @@ export function buildApp(): FastifyInstance {
   registerInventory(app);
   registerRbac(app);
   registerOfflineSync(app);
+  registerStream(app);
   registerPhase2(app);
 
   registerPing(app);
