@@ -16,3 +16,17 @@ Maps every requirement ID to the source files that own it and the automated test
 | NFR-4 | Offline tolerance | `backend/src/domain/sync/index.ts`, `backend/src/audit/offlineSync.ts`, `mobile/src/db/index.ts`, `mobile/src/queue/*.ts`, `mobile/src/sync/status.tsx`, `mobile/src/components/SyncBanner.tsx` | `tests/sync/*.test.ts` |
 | NFR-5 | Security (JWT, rate limiting, validation, body limit) | `backend/src/domain/rbac/tokens.ts`, `backend/src/api/ping.ts`, `backend/src/http/validate.ts`, `backend/src/http/errors.ts`, `backend/src/app.ts`, `mobile/src/auth/token.ts` | `tests/rbac/*.test.ts` |
 | NFR-7 | Reproducible one-command Docker stack | `docker-compose.yml`, `backend/Dockerfile`, `backend/src/index.ts`, `backend/src/db/pool.ts`, `backend/src/db/seed.ts` | stub |
+| FR-3.1 | Stream key lifecycle (generate, rotate, revoke) | `backend/src/domain/stream/index.ts`, `backend/src/audit/stream.ts` | `tests/phase2/stream.test.ts` |
+| FR-3.2 | Co-stream session layout and host handoff | `backend/src/domain/costream/index.ts`, `backend/src/audit/costream.ts` | `tests/phase2/costream.test.ts` |
+| FR-3.3 | Media health gate on `/health` | `backend/src/media/probe.ts`, `backend/src/audit/health.ts`, `media/mediamtx.yml` | `tests/phase2/mediaHealth.test.ts` |
+| FR-4.1 | QR entities, exports, and scan semantics | `backend/src/domain/qr/index.ts`, `backend/src/audit/qr.ts` | `tests/phase2/qr.test.ts` |
+| FR-4.2 | Guest cart merge and write-block | `backend/src/domain/guest/index.ts`, `backend/src/audit/guest.ts`, `backend/src/audit/checkout.ts`, `backend/src/audit/events.ts` | `tests/phase2/guest.test.ts` |
+| FR-4.3 | Guest live HTML page | `backend/src/domain/web/guestPage.ts`, `backend/src/audit/web.ts` | `tests/phase2/guestPage.test.ts` |
+| FR-4.4 | Short URL redirect (`/q/:code`) | `backend/src/domain/qr/index.ts`, `backend/src/audit/qr.ts`, `backend/src/audit/web.ts` | `tests/phase2/qr.test.ts`; `tests/phase2/guestPage.test.ts` |
+| FR-5.2 | Chat moderation, flood, profanity, DLQ | `backend/src/domain/moderation/index.ts`, `backend/src/audit/moderation.ts` | `tests/phase2/moderation.test.ts` |
+| FR-5.3 | Progressive auth on guest chat send (web) | `backend/src/domain/web/guestPage.ts`, `backend/src/audit/web.ts` | `tests/phase2/guestPage.test.ts`; `tests/selenium/test_guest_grid.py` |
+| NFR-1 | Load profile (550 VUs, audit routes) | `tests/k6_load.js`, `tests/k6_smoke.js` | local `k6 run tests/k6_load.js`; CI `tests/k6_smoke.js` |
+| NFR-2 | Prometheus metrics | `backend/src/domain/metrics/index.ts`, `backend/src/audit/metrics.ts` | `tests/phase2/observability.test.ts` |
+| NFR-6 | Privacy erasure | `backend/src/domain/privacy/index.ts`, `backend/src/audit/privacy.ts` | `tests/phase2/observability.test.ts` |
+| NFR-8 | Selenium Grid guest flows | `docker-compose.yml`, `tests/selenium/test_guest_grid.py` | `pytest tests/selenium/test_guest_grid.py` (manual / Grid) |
+| NFR-9 | Mobile deeplink readiness | `mobile/app.json`, `tests/appium/test_mobile_deeplink.py` | `pytest tests/appium/test_mobile_deeplink.py` (manual / Appium) |

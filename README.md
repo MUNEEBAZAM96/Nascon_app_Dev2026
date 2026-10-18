@@ -55,6 +55,20 @@ The release APK goes to `mobile/release/app-release.apk` (`npx expo prebuild`, t
 
 Runs Node's built-in test runner over `tests/`. Coverage per backend area is declared in `COVERAGE.json`.
 
+### Slice 15 freeze checklist
+
+Salts live in `.env` only (never commit). With Docker running:
+
+```bash
+./run_tests.sh
+./scripts/freeze_slice15.sh          # compose + 120s health/grid/reset/DB probes
+./scripts/day2_probes.sh             # live API probes only (stack already up)
+k6 run --summary-export=tests/reports/k6-summary.json tests/k6_load.js
+git merge-base --is-ancestor <saturday-sha> HEAD
+```
+
+Push `tests/reports/k6-summary.json` before the course deadline. iOS Simulator click-through is manual.
+
 ## Layout
 
 ```text
