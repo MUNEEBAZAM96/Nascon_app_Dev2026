@@ -13,9 +13,16 @@ export interface Config {
     secretKey: string;
     bucket: string;
   };
+  /** When set, /health probes this URL (e.g. http://media:8888/ in Compose). */
+  mediaHealthUrl: string | undefined;
 }
 
 let cached: Config | null = null;
+
+/** Clears cached config so tests can change env before buildApp(). */
+export function resetConfigCache(): void {
+  cached = null;
+}
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   if (cached) return cached;
@@ -28,6 +35,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
 
   const day2Raw = env.DAY2_SALT;
   const day2Salt = day2Raw === undefined || day2Raw === '' ? undefined : day2Raw;
+  const mediaRaw = env.MEDIA_HEALTH_URL;
+  const mediaHealthUrl = mediaRaw === undefined || mediaRaw === '' ? undefined : mediaRaw;
 
   cached = {
     port: Number(env.PORT ?? 8080),
@@ -43,6 +52,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       secretKey: env.MINIO_SECRET_KEY ?? 'sideline-secret',
       bucket: env.MINIO_BUCKET ?? 'receipts',
     },
+    mediaHealthUrl,
   };
   return cached;
 }
