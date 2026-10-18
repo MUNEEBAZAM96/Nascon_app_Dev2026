@@ -142,6 +142,7 @@ const APP_TABLES = [
   'guest_tokens',
   'carts',
   'stream_keys',
+  'moderation_dlq',
 ];
 
 export async function reset(input: ResetInput = {}): Promise<ResetResult> {

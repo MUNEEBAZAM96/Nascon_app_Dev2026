@@ -10,6 +10,7 @@ import { registerFixtures } from './audit/fixtures';
 import { registerHealth } from './audit/health';
 import { registerInventory } from './audit/inventory';
 import { registerLeagues } from './audit/leagues';
+import { registerModeration } from './audit/moderation';
 import { registerOfflineSync } from './audit/offlineSync';
 import { registerPhase2 } from './audit/phase2';
 import { registerQr } from './audit/qr';
@@ -49,6 +50,7 @@ export function buildApp(): FastifyInstance {
   registerStream(app);
   registerQr(app);
   registerGuest(app);
+  registerModeration(app);
   registerPhase2(app);
 
   registerPing(app);

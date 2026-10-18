@@ -205,6 +205,15 @@ CREATE TABLE IF NOT EXISTS carts (
   items   jsonb NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS moderation_dlq (
+  id            text PRIMARY KEY,
+  chat_room_id  text NOT NULL,
+  payload       jsonb NOT NULL,
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS moderation_dlq_room_idx ON moderation_dlq (chat_room_id, created_at);
+
 CREATE TABLE IF NOT EXISTS stream_keys (
   stream_key text PRIMARY KEY,
   player_id  text NOT NULL,
