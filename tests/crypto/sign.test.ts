@@ -1,3 +1,6 @@
+process.env.DAY1_SALT ??= 'test-salt';
+process.env.DAY2_SALT ??= 'test-salt-day2';
+
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 import { test } from 'node:test';
@@ -18,7 +21,6 @@ test('signature matches Appendix A test vector 1', () => {
 });
 
 test('day 2 stream-key signature matches a hand-computed HMAC', () => {
-  const referenceSalt = 'T01D27ad7ffff12e';
   const streamKey = 'sk_live_9f83a1b2c3d4e5f6';
   const payload = {
     action: 'rotate',
@@ -27,9 +29,9 @@ test('day 2 stream-key signature matches a hand-computed HMAC', () => {
     stream_key: streamKey,
   };
   const message = `${streamKey}|{"action":"rotate","player_id":"player-alpha-1","status":"active","stream_key":"${streamKey}"}`;
-  const digest = createHmac('sha256', Buffer.from(referenceSalt, 'utf8')).update(Buffer.from(message, 'utf8')).digest('hex');
+  const digest = createHmac('sha256', Buffer.from('test-salt-day2', 'utf8')).update(Buffer.from(message, 'utf8')).digest('hex');
   assert.match(digest, /^[a-f0-9]{64}$/);
-  assert.equal(signDay2(referenceSalt, streamKey, payload), digest);
+  assert.equal(signDay2(streamKey, payload), digest);
 });
 
 test('draw-of-lots keys match Appendix A test vector 2', () => {

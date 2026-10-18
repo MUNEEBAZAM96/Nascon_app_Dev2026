@@ -1,6 +1,8 @@
 export interface Config {
   port: number;
   day1Salt: string;
+  /** Raw UTF-8 HMAC key from DAY2_SALT; undefined when unset (Phase I tests need not set it). */
+  day2Salt: string | undefined;
   jwtSecret: string;
   databaseUrl: string;
   redisUrl: string;
@@ -24,9 +26,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     throw new Error('DAY1_SALT is missing or empty. Start with: DAY1_SALT=<salt> docker compose up -d --build');
   }
 
+  const day2Raw = env.DAY2_SALT;
+  const day2Salt = day2Raw === undefined || day2Raw === '' ? undefined : day2Raw;
+
   cached = {
     port: Number(env.PORT ?? 8080),
     day1Salt,
+    day2Salt,
     jwtSecret: env.JWT_SECRET || 'dev-jwt-secret',
     databaseUrl: env.DATABASE_URL ?? 'postgres://sideline:sideline@localhost:5432/sideline',
     redisUrl: env.REDIS_URL ?? 'redis://localhost:6379',
