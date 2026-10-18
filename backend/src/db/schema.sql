@@ -188,6 +188,12 @@ CREATE TABLE IF NOT EXISTS qr_links (
   scan_count  int NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS guest_merge_requests (
+  token         text PRIMARY KEY,
+  request_hash  text NOT NULL,
+  response      jsonb NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS guest_tokens (
   token  text PRIMARY KEY,
   merged boolean NOT NULL DEFAULT false,

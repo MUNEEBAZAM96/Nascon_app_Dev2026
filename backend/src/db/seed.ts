@@ -138,6 +138,7 @@ const APP_TABLES = [
   'roster_requests',
   'offline_actions',
   'qr_links',
+  'guest_merge_requests',
   'guest_tokens',
   'carts',
   'stream_keys',

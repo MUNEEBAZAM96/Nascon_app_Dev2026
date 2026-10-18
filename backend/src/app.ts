@@ -1,15 +1,18 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 
 import { registerAuth } from './api/auth';
+import { registerChat } from './api/chat';
 import { registerPing } from './api/ping';
 import { registerCheckout } from './audit/checkout';
 import { registerEvents } from './audit/events';
+import { registerGuest } from './audit/guest';
 import { registerFixtures } from './audit/fixtures';
 import { registerHealth } from './audit/health';
 import { registerInventory } from './audit/inventory';
 import { registerLeagues } from './audit/leagues';
 import { registerOfflineSync } from './audit/offlineSync';
 import { registerPhase2 } from './audit/phase2';
+import { registerQr } from './audit/qr';
 import { registerRbac } from './audit/rbac';
 import { registerReset } from './audit/reset';
 import { registerRoster } from './audit/roster';
@@ -44,10 +47,13 @@ export function buildApp(): FastifyInstance {
   registerRbac(app);
   registerOfflineSync(app);
   registerStream(app);
+  registerQr(app);
+  registerGuest(app);
   registerPhase2(app);
 
   registerPing(app);
   registerAuth(app);
+  registerChat(app);
   registerSse(app);
 
   return app;
