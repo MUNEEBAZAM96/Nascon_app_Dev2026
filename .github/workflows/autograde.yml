@@ -40,7 +40,7 @@ jobs:
           done
 
       - name: Run TypeScript test suite
-        run: ./run_tests.sh
+        run: bash run_tests.sh
 
       - name: Start API, media, and Selenium Grid
         env:

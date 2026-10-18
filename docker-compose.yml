@@ -53,19 +53,12 @@ services:
       retries: 30
 
   media:
-    image: bluenviron/mediamtx:latest
+    build: ./media
     ports:
       - "1935:1935"
       - "8888:8888"
       - "8889:8889"
-    volumes:
-      - ./media/mediamtx.yml:/mediamtx.yml:ro
-    command: ["/mediamtx.yml"]
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1:8888/ >/dev/null 2>&1 || exit 1"]
-      interval: 2s
-      timeout: 3s
-      retries: 30
+    # MediaMTX image has no /bin/sh; /health probes media via MEDIA_HEALTH_URL on api.
 
   minio:
     # minio/minio is no longer pullable from Docker Hub; Chainguard publishes the same open-source server.
@@ -94,7 +87,7 @@ services:
       minio:
         condition: service_started
       media:
-        condition: service_healthy
+        condition: service_started
     restart: unless-stopped
 
   worker:
