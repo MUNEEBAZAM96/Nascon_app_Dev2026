@@ -27,6 +27,11 @@ export function sign(salt: string, id: string, payload: unknown): string {
   return createHmac('sha256', Buffer.from(salt, 'utf8')).update(Buffer.from(message, 'utf8')).digest('hex');
 }
 
+/** Day 2 HMAC. The caller supplies DAY2_SALT. entityId is the signed id from Section 5.3. */
+export function signDay2(salt: string, entityId: string, sigPayload: unknown): string {
+  return sign(salt, entityId, sigPayload);
+}
+
 export function lotsKey(seed: number, leagueId: string, teamId: string): string {
   return createHash('sha256').update(`${seed}|${leagueId}|${teamId}`, 'utf8').digest('hex');
 }
