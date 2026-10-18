@@ -143,6 +143,7 @@ const APP_TABLES = [
   'carts',
   'stream_keys',
   'moderation_dlq',
+  'costream_sessions',
 ];
 
 export async function reset(input: ResetInput = {}): Promise<ResetResult> {

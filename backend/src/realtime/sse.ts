@@ -2,6 +2,12 @@ import type { FastifyInstance, FastifyReply } from 'fastify';
 
 const subscribers = new Map<string, Set<FastifyReply>>();
 
+export function activeSseConnections(): number {
+  let total = 0;
+  for (const set of subscribers.values()) total += set.size;
+  return total;
+}
+
 export function subscribe(matchId: string, reply: FastifyReply): () => void {
   let set = subscribers.get(matchId);
   if (!set) {

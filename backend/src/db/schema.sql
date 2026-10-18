@@ -223,3 +223,9 @@ CREATE TABLE IF NOT EXISTS stream_keys (
 );
 
 CREATE INDEX IF NOT EXISTS stream_keys_active_slot_idx ON stream_keys (player_id, label) WHERE status = 'active';
+
+CREATE TABLE IF NOT EXISTS costream_sessions (
+  session_id   text PRIMARY KEY,
+  request_hash text NOT NULL,
+  response     jsonb NOT NULL
+);

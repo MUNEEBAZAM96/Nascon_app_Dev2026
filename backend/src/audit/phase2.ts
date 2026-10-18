@@ -1,10 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 
-import { notImplemented } from '../http/errors';
-
-/** Phase II audit paths. Each one is a stub until its slice is implemented. */
-export function registerPhase2(app: FastifyInstance): void {
-  app.post('/audit/v1/costream/session', async () => notImplemented('costream session'));
-  app.get('/metrics', async () => notImplemented('metrics'));
-  app.delete('/audit/v1/privacy/user/:user_id', async () => notImplemented('privacy erasure'));
+/** Phase II audit paths. Remaining stubs register here until their slice ships. */
+export function registerPhase2(_app: FastifyInstance): void {
+  // Slice 9+ routes land in dedicated register* modules before this hook.
 }

@@ -4,13 +4,16 @@ import { registerAuth } from './api/auth';
 import { registerChat } from './api/chat';
 import { registerPing } from './api/ping';
 import { registerCheckout } from './audit/checkout';
+import { registerCostream } from './audit/costream';
 import { registerEvents } from './audit/events';
 import { registerGuest } from './audit/guest';
 import { registerFixtures } from './audit/fixtures';
 import { registerHealth } from './audit/health';
 import { registerInventory } from './audit/inventory';
 import { registerLeagues } from './audit/leagues';
+import { registerMetrics } from './audit/metrics';
 import { registerModeration } from './audit/moderation';
+import { registerPrivacy } from './audit/privacy';
 import { registerOfflineSync } from './audit/offlineSync';
 import { registerPhase2 } from './audit/phase2';
 import { registerQr } from './audit/qr';
@@ -51,6 +54,9 @@ export function buildApp(): FastifyInstance {
   registerQr(app);
   registerGuest(app);
   registerModeration(app);
+  registerCostream(app);
+  registerMetrics(app);
+  registerPrivacy(app);
   registerPhase2(app);
 
   registerPing(app);
