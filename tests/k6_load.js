@@ -1,6 +1,6 @@
 /**
  * Day 2 Slice 12 / section 6.4 load profile (550 VUs total).
- * Full run is local/heavy; Slice 13 CI uses a shorter smoke — not defined here.
+ * Full run is local/heavy; CI smoke is tests/k6_smoke.js (Slice 13 autograde).
  *
  *   k6 run tests/k6_load.js
  *   k6 run --summary-export=tests/reports/k6-summary.json tests/k6_load.js

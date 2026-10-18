@@ -1,0 +1,97 @@
+name: Autograde
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  autograde:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Start Postgres and Redis for unit tests
+        run: |
+          docker compose up -d postgres redis
+          for i in $(seq 1 60); do
+            if docker compose exec -T postgres pg_isready -U sideline -d sideline >/dev/null 2>&1; then
+              echo "Postgres ready"
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              echo "Postgres did not become ready in time"
+              exit 1
+            fi
+            sleep 2
+          done
+
+      - name: Run TypeScript test suite
+        run: ./run_tests.sh
+
+      - name: Start API, media, and Selenium Grid
+        env:
+          DAY1_SALT: ${{ secrets.DAY1_SALT }}
+          DAY2_SALT: ${{ secrets.DAY2_SALT }}
+        run: |
+          find . -name '._*' -delete
+          docker compose up -d --build \
+            postgres redis minio media api \
+            selenium-hub chrome-node-1 chrome-node-2 firefox-node
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:8080/health | python3 -c "import sys,json; assert json.load(sys.stdin)=={'status':'ok'}"; then
+              echo "API healthy"
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              echo "API /health did not succeed in time"
+              docker compose logs api --tail 80 || true
+              exit 1
+            fi
+            sleep 2
+          done
+
+      - name: Assert Selenium Grid status
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:4444/status | python3 -c "
+          import sys, json
+          v = json.load(sys.stdin)['value']
+          assert v['ready'] is True, v
+          assert len(v['nodes']) >= 3, len(v['nodes'])
+          print('grid ready, nodes=', len(v['nodes']))
+          "; then
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              echo "Grid /status check failed"
+              curl -s http://127.0.0.1:4444/status || true
+              exit 1
+            fi
+            sleep 2
+          done
+
+      - name: Setup k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: k6 smoke (audit routes)
+        env:
+          BASE_URL: http://127.0.0.1:8080
+        run: k6 run tests/k6_smoke.js
+
+      - name: Teardown Docker stack
+        if: always()
+        run: docker compose down -v
